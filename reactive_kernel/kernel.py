@@ -27,10 +27,12 @@ class ReactivePythonKernel(Kernel):
             try: 
                 obj = CodeObject(code)
             except Exception as e:
-                error_content = {'ename': str(e.__class__), 'evalue': e.__doc__, 'traceback': []}
-                self.send_response(self.iopub_socket, 'error', error_content)
-                error_content['status'] = 'error'
-                return error_content
+                return {
+                    'status' : 'error',
+                    'ename' : e.expr,
+                    'evalue' : e.expr,
+                    'traceback' : sys.exc_info()
+                }
             stream_content = {'name': 'stdout', 'text': str(obj.input_vars)}
             self.send_response(self.iopub_socket, 'stream', stream_content)
 
