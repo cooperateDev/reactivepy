@@ -1,12 +1,10 @@
 import sys
 import getpass
 import io
-from .capturedObject import CaptureObject, CapturingDisplayHook
 from ast import parse, AugAssign, AnnAssign, Assign
 from ast import AST
 import ast
 from typing import List as ListType
-from .astpp import dump
 
 _assign_nodes = (ast.AugAssign, ast.AnnAssign, ast.Assign)
 _single_targets_nodes = (ast.AugAssign, ast.AnnAssign)
@@ -28,6 +26,8 @@ class ExecutionContext:
         if not nodelist:
             return
 
+        old_displayhook = sys.displayhook
+        sys.displayhook = lambda x: print(repr(x))
         if isinstance(nodelist[-1], _assign_nodes):
             asg = nodelist[-1]
             if isinstance(asg, ast.Assign) and len(asg.targets) == 1:
@@ -48,20 +48,19 @@ class ExecutionContext:
 
         try:
             mod = ast.Module(to_run_exec)
-            print(dump(mod))
             code = compile(mod, "<ast-parse>", "exec")
             if self.run_code(code):
                 return True
 
             for i, node in enumerate(to_run_interactive):
                 mod = ast.Interactive([node])
-                print(dump(mod))
                 code = compile(mod, "<ast-parse>", "single")
                 if self.run_code(code):
                     return True
-        except:
+        except BaseException:
             return True
 
+        sys.displayhook = old_displayhook
         return False
 
     def run_code(self, code_obj):
@@ -73,7 +72,7 @@ class ExecutionContext:
             finally:
                 # Reset our crash handler in place
                 sys.excepthook = old_excepthook
-        except:
+        except BaseException:
             pass
         else:
             outflag = False
