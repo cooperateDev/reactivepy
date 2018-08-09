@@ -6,7 +6,6 @@ from .captured_io import CapturedIOCtx
 from .captured_display import CapturedDisplayCtx
 from .dependencies import DependencyTracker
 import traceback as tb
-from IPython.core.formatters import DisplayFormatter
 
 __version__ = '0.1.0'
 
@@ -29,8 +28,6 @@ class ReactivePythonKernel(Kernel):
 
         self.dep_tracker = DependencyTracker()
 
-        self.formatter = DisplayFormatter()
-
     def do_execute(self, code, silent, store_history=True, user_expressions=None,
                    allow_stdin=False):
         try:
@@ -43,11 +40,6 @@ class ReactivePythonKernel(Kernel):
                     self._register_new_code_object(code_obj)
 
                 self.execution_ctx._run_cell(code)
-
-                if len(a.values) > 0:
-                    data, md = self.formatter.format(a.values[0])
-                else:
-                    data, md = {}, {}
 
             descendants = self.dep_tracker.get_descendants(code_obj)
 
@@ -79,11 +71,6 @@ class ReactivePythonKernel(Kernel):
                 self.send_response(
                     self.iopub_socket, 'stream', {
                         'name': 'stderr', 'text': captured_io.stderr})
-
-            if len(a.values) > 0:
-                self.send_response(
-                    self.iopub_socket, 'display_data', {
-                        'data': data, 'metadata': md, 'transient': {}})
 
         return {'status': 'ok',
                 'execution_count': self.execution_count,

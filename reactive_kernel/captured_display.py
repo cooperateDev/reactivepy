@@ -1,17 +1,26 @@
 import io
 import sys
-import builtins as builtins_mod
+import builtins
 
 
 class CapturedDisplayHook(object):
-    def __init__(self):
-        self.values = []
-
     def __call__(self, value=None):
         if value is None:
             return
-        self.values.append(value)
-        builtins_mod._ = value
+        # Set '_' to None to avoid recursion
+        builtins._ = None
+        text = repr(value)
+        try:
+            sys.stdout.write(text)
+        except UnicodeEncodeError:
+            bytes = text.encode(sys.stdout.encoding, 'backslashreplace')
+            if hasattr(sys.stdout, 'buffer'):
+                sys.stdout.buffer.write(bytes)
+            else:
+                text = bytes.decode(sys.stdout.encoding, 'strict')
+                sys.stdout.write(text)
+        sys.stdout.write("\n")
+        builtins._ = value
 
 
 class CapturedDisplayCtx(object):
