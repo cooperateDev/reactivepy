@@ -153,15 +153,13 @@ setup(name='reactivepy',
       requires=[
           'ipython',
           'jupyter_client', 'tornado',
-          'ipykernel',
-          'graphviz'
+          'ipykernel'
       ],
       install_requires=[
           'ipython>=4.0.0',
           'jupyter_client',
           'tornado>=4.0',
-          'ipykernel>=4.8',
-          'graphviz'
+          'ipykernel>=4.8'
       ],
       classifiers=[
           'Intended Audience :: Developers',
