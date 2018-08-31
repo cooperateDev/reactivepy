@@ -12,6 +12,7 @@ import linecache
 import time
 from tornado.ioloop import IOLoop
 from importlib.abc import InspectLoader
+from .user_namespace import BuiltInManager
 
 _assign_nodes = (ast.AugAssign, ast.AnnAssign, ast.Assign)
 _single_targets_nodes = (ast.AugAssign, ast.AnnAssign)
@@ -96,8 +97,7 @@ class CapturedDisplayCtx(object):
 
 
 class Executor:
-    def __init__(self, loader: InspectLoader):
-        self.user_ns = {}
+    def __init__(self, loader: InspectLoader, ns_manager: BuiltInManager):
         self.loader = loader
         self.excepthook = sys.excepthook
         self.InteractiveTB = ultratb.AutoFormattedTB(mode='Plain',
@@ -105,6 +105,7 @@ class Executor:
                                                      tb_offset=1,
                                                      debugger_cls=None)
         self.SyntaxTB = ultratb.SyntaxTB(color_scheme='NoColor')
+        self.ns_manager = ns_manager
 
     async def run_coroutine(self, coroutine, variable_name, nohandle_exceptions=()):
         exec_result = ExecutionResult()
@@ -146,7 +147,7 @@ class Executor:
         return exec_result
 
     def update_ns(self, *args, **kwargs):
-        self.user_ns.update(*args, **kwargs)
+        self.ns_manager.update(*args, **kwargs)
 
     def run_cell(self, code, name):
         cache_result = linecache.lazycache(
@@ -211,7 +212,8 @@ class Executor:
         outflag = True  # happens in more places, so it's easier as default
         try:
             try:
-                exec(code_obj, self.user_ns, self.user_ns)
+                exec(code_obj, self.ns_manager.global_ns,
+                     self.ns_manager.local_ns)
             finally:
                 # Reset our crash handler in place
                 sys.excepthook = old_excepthook
